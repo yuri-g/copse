@@ -1,9 +1,16 @@
-(ns copse.core)
+(ns copse.core
+  (:require [ring.adapter.jetty :refer [run-jetty]]
+            [copse.request-handler :refer [handler]]))
 
-(defn- load-routes [app-ns]
-  (println (str "Loading routes from: " app-ns))
-  (let [ns (ns-publics app-ns)]
-    (((symbol "routes") ns))))
+(defn- preload-routes [app-ns]
+  (let [ns (ns-publics app-ns)
+        routes-function ((symbol "routes") ns)]
+    (if (nil? routes-function)
+      (println "Routes function not defined in http/routes.clj")
+      (routes-function))))
 
 (defn bootstrap [app-namespace]
-  (load-routes app-namespace))
+  (run-jetty
+   (handler (preload-routes app-namespace))
+   {:port 3001}))
+
